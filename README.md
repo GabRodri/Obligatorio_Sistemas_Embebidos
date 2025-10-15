@@ -5,9 +5,9 @@
   Este programa fue desarrollado utilizando MPLAB X v5.20 y está diseñado para funcionar en el microcontrolador PIC16F876A.
 
 ## Autores:
-  Gabriel Rodríguez (203757)
+- Gabriel Rodríguez (203757)
 
-  Matías Franco (223661)
+- Matías Franco (223661)
 
 ### Docente:
-  Diego Sáez
+- Diego Sáez

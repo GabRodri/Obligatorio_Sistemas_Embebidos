@@ -2,10 +2,12 @@
 
   Código fuente del obligatorio 1 para la asignatura Sistemas Embebidos.
 
-## Autores:
-Gabriel Rodríguez (203757)
+  Este programa fue desarrollado utilizando MPLabX y está diseñado para funcionar en el microcontrolador PIC16F876A.
 
-Matías Franco (223661)
+## Autores:
+  Gabriel Rodríguez (203757)
+
+  Matías Franco (223661)
 
 ### Docente:
-Diego Sáez
+  Diego Sáez

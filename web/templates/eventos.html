@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventos Registrados</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Eventos Registrados</h1>
+            <a href="{{ url_for('index') }}" class="btn btn-back">← Volver al Inicio</a>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="stats-quick">
+            <div class="stats-mini">
+                <div class="stat-mini">
+                    <span class="stat-mini-label">Total Eventos</span>
+                    <span class="stat-mini-value">{{ eventos|length }}</span>
+                </div>
+                <div class="stat-mini">
+                    <span class="stat-mini-label">Autorizados</span>
+                    <span class="stat-mini-value success">
+                        {{ eventos|selectattr("3")|list|length }}
+                    </span>
+                </div>
+                <div class="stat-mini">
+                    <span class="stat-mini-label">Denegados</span>
+                    <span class="stat-mini-value danger">
+                        {{ eventos|rejectattr("3")|list|length }}
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <section class="list-section">
+            <div class="section-header">
+                <h2>Historial de Eventos</h2>
+                <div class="section-actions">
+                    <button onclick="recargarEventos()" class="btn btn-secondary">🔄 Actualizar</button>
+                    <a href="{{ url_for('consultar_eventos') }}" class="btn btn-primary">📅 Consultar por Fecha</a>
+                </div>
+            </div>
+
+            {% if eventos %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Identificación</th>
+                            <th>Nombre</th>
+                            <th>Fecha y Hora</th>
+                            <th>Autorizado</th>
+                            <th>Canal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for evento in eventos %}
+                        <tr class="{{ 'row-authorized' if evento[3] else 'row-denied' }}">
+                            <td><code>#{{ evento[0] }}</code></td>
+                            <td>
+                                <strong>{{ evento[1] }}</strong>
+                                {% if evento[1]|length == 8 %}
+                                <span class="badge badge-secondary">Cédula</span>
+                                {% else %}
+                                <span class="badge badge-info">RFID</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if evento[5] %}
+                                {{ evento[5] }}
+                                {% else %}
+                                <span class="text-muted">No registrado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="datetime">{{ evento[2] }}</span>
+                            </td>
+                            <td>
+                                <span class="badge {{ 'badge-success' if evento[3] else 'badge-danger' }}">
+                                    {{ '✅ Sí' if evento[3] else '❌ No' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {{ 'badge-info' if evento[4] == 'rfid' else 'badge-warning' }}">
+                                    {% if evento[4] == 'rfid' %}
+                                    📡 RFID
+                                    {% else %}
+                                    🔌 Serial
+                                    {% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-footer">
+                <p>Mostrando los últimos <strong>{{ eventos|length }}</strong> eventos registrados</p>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <h3>📊 No hay eventos registrados</h3>
+                <p>No se han registrado eventos en el sistema aún.</p>
+                <p>Los eventos se registran automáticamente a través de la API.</p>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+
+    <script>
+        function recargarEventos() {
+            location.reload();
+        }
+
+        // Mejorar la visualización de fechas
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateElements = document.querySelectorAll('.datetime');
+            dateElements.forEach(el => {
+                const originalDate = el.textContent;
+                const date = new Date(originalDate);
+                el.textContent = date.toLocaleString('es-ES');
+                el.title = originalDate;
+            });
+        });
+    </script>
+</body>
+</html>

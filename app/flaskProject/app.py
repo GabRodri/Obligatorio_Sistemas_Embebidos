@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from database import *
-from rfid_reader import iniciar_lector_rfid
 from pic_communicator import iniciar_lector_pic, agregar_funcionario_con_sinc, eliminar_funcionario_con_sinc
+from rfid_reader import iniciar_lector_rfid
 
 app = Flask(__name__)
 app.secret_key = 'clave_secreta_para_mensajes_flash'
@@ -9,6 +9,10 @@ app.secret_key = 'clave_secreta_para_mensajes_flash'
 # Estado del sistema
 sistema_activo = True
 
+
+# ==========================
+#     RUTAS PRINCIPALES
+# ==========================
 
 @app.route('/')
 def index():
@@ -33,7 +37,10 @@ def control_sistema():
     return redirect(url_for('index'))
 
 
-# Rutas para Funcionarios
+# ==========================
+#     FUNCIONARIOS
+# ==========================
+
 @app.route('/funcionarios')
 def gestion_funcionarios():
     funcionarios = obtener_funcionarios()
@@ -82,7 +89,10 @@ def eliminar_funcionario_route(identificacion):
     return redirect(url_for('gestion_funcionarios'))
 
 
-# Rutas para Eventos
+# ==========================
+#     EVENTOS
+# ==========================
+
 @app.route('/eventos')
 def ver_eventos():
     eventos = obtener_eventos()
@@ -99,7 +109,6 @@ def consultar_eventos():
         fecha_inicio = request.form['fecha_inicio']
         fecha_fin = request.form['fecha_fin']
 
-        # Validar que las fechas no estén vacías
         if fecha_inicio and fecha_fin:
             eventos = consultar_eventos_por_fecha(fecha_inicio, fecha_fin)
             if eventos:
@@ -115,7 +124,10 @@ def consultar_eventos():
                            fecha_fin=fecha_fin)
 
 
-# API para recibir eventos desde sistemas externos
+# ==========================
+#     API
+# ==========================
+
 @app.route('/api/evento', methods=['POST'])
 def api_evento():
     try:
@@ -126,7 +138,6 @@ def api_evento():
         if not identificacion:
             return jsonify({'status': 'error', 'message': 'Identificación requerida'}), 400
 
-        # Verificar si el funcionario existe
         funcionario = obtener_funcionario_por_id(identificacion)
         autorizado = 1 if funcionario else 0
 
@@ -147,14 +158,12 @@ def api_evento():
         return jsonify({'status': 'error', 'message': str(e)}), 400
 
 
-# Ruta para obtener estadísticas en JSON
 @app.route('/api/estadisticas')
 def api_estadisticas():
     estadisticas = obtener_estadisticas()
     return jsonify(estadisticas)
 
 
-# Ruta para estado del sistema RFID
 @app.route('/api/rfid_status')
 def rfid_status():
     return jsonify({
@@ -163,44 +172,29 @@ def rfid_status():
     })
 
 
-# # Iniciar todos los servicios al arrancar
-# @app.before_first_request
-# def iniciar_servicios():
-#     print("Iniciando todos los servicios...")
-#
-#     # Iniciar lector RFID
-#     iniciar_lector_rfid()
-#
-#     # Iniciar comunicación con PIC
-#     try:
-#         iniciar_lector_pic()
-#         print("Comunicación con PIC iniciada")
-#     except Exception as e:
-#         print(f"Error iniciando comunicación PIC: {e}")
-#
-#     print("Todos los servicios iniciados")
-
+# ==========================
+#     PUNTO DE ENTRADA
+# ==========================
 
 if __name__ == '__main__':
-
-    print("Iniciando todos los servicios...")
-
-    # Iniciar lector RFID
-    iniciar_lector_rfid()
-
-    # Iniciar comunicación con PIC
-    try:
-        iniciar_lector_pic()
-        print("Comunicación con PIC iniciada")
-    except Exception as e:
-        print(f"Error iniciando comunicación PIC: {e}")
-
-    print("Todos los servicios iniciados")
-
     print("=" * 60)
     print("SISTEMA DE GESTIÓN DE ACCESOS - RASPBERRY PI 2")
     print("=" * 60)
-    print("Servicios Iniciados:")
+    print("Iniciando todos los servicios...")
+
+    # ✅ Iniciar servicios solo una vez
+    try:
+        iniciar_lector_rfid()
+    except Exception as e:
+        print(f"❌ Error iniciando lector RFID: {e}")
+
+    try:
+        iniciar_lector_pic()
+    except Exception as e:
+        print(f"❌ Error iniciando comunicación con PIC: {e}")
+
+    print("✅ Todos los servicios iniciados correctamente.")
+    print("=" * 60)
     print("  ✅ Servidor Web: http://localhost:5000")
     print("  ✅ Lector RFID: Activo (GPIO 17-27 para LEDs)")
     print("  ✅ Comunicación Serial: /dev/ttyAMA0")

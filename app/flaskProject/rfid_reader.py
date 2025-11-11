@@ -117,11 +117,17 @@ class RFIDReader:
         GPIO.cleanup()
         print("GPIO limpiado")
 
+lector_activo = False
 
 def iniciar_lector_rfid():
-    """Iniciar el lector RFID en un hilo separado"""
+    """Iniciar el lector RFID en un hilo separado (solo una vez)"""
+    global lector_activo
+    if lector_activo:
+        print("⚠️ Lector RFID ya está en ejecución, se omite reinicio.")
+        return
+
     lector = RFIDReader()
     thread = threading.Thread(target=lector.run, daemon=True)
     thread.start()
-    print("Servicio RFID iniciado")
-    return thread
+    lector_activo = True
+    print("✅ Servicio RFID iniciado")

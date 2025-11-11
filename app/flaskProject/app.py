@@ -163,9 +163,26 @@ def rfid_status():
     })
 
 
-# Iniciar todos los servicios al arrancar
-@app.before_first_request
-def iniciar_servicios():
+# # Iniciar todos los servicios al arrancar
+# @app.before_first_request
+# def iniciar_servicios():
+#     print("Iniciando todos los servicios...")
+#
+#     # Iniciar lector RFID
+#     iniciar_lector_rfid()
+#
+#     # Iniciar comunicación con PIC
+#     try:
+#         iniciar_lector_pic()
+#         print("Comunicación con PIC iniciada")
+#     except Exception as e:
+#         print(f"Error iniciando comunicación PIC: {e}")
+#
+#     print("Todos los servicios iniciados")
+
+
+if __name__ == '__main__':
+
     print("Iniciando todos los servicios...")
 
     # Iniciar lector RFID
@@ -180,8 +197,6 @@ def iniciar_servicios():
 
     print("Todos los servicios iniciados")
 
-
-if __name__ == '__main__':
     print("=" * 60)
     print("SISTEMA DE GESTIÓN DE ACCESOS - RASPBERRY PI 2")
     print("=" * 60)

@@ -43,19 +43,19 @@ GPIO.setwarnings(False)
 class RFIDReader:
     def __init__(self):
         self.reader = SimpleMFRC522()
-        self.led_verde = 17
-        self.led_rojo = 27
+        self.led_verde = 11
+        self.led_rojo = 13
         self.setup_gpio()
         self.running = True
 
     def setup_gpio(self):
-        """Configura los pines GPIO para los LEDs"""
-        current_mode = GPIO.getmode()
-        if current_mode is None:
-            GPIO.setmode(GPIO.BCM)
-            logger.debug("Modo GPIO configurado en BCM.")
-        elif current_mode != GPIO.BCM:
-            logger.warning(f"GPIO ya estaba configurado en otro modo ({current_mode}), se mantiene sin cambio.")
+        # """Configura los pines GPIO para los LEDs"""
+        # current_mode = GPIO.getmode()
+        # if current_mode is None:
+        #     GPIO.setmode(GPIO.BCM)
+        #     logger.debug("Modo GPIO configurado en BCM.")
+        # elif current_mode != GPIO.BCM:
+        #     logger.warning(f"GPIO ya estaba configurado en otro modo ({current_mode}), se mantiene sin cambio.")
 
         GPIO.setup(self.led_verde, GPIO.OUT)
         GPIO.setup(self.led_rojo, GPIO.OUT)

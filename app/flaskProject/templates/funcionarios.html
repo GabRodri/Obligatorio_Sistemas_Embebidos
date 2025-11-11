@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Funcionarios</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Gestión de Funcionarios</h1>
+            <a href="{{ url_for('index') }}" class="btn btn-back">← Volver al Inicio</a>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="form-section">
+            <h2>Agregar Nuevo Funcionario</h2>
+            <form action="{{ url_for('agregar_funcionario_route') }}" method="POST" class="form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="identificacion">Identificación (Cédula/RFID):</label>
+                        <input type="text" id="identificacion" name="identificacion" 
+                               placeholder="Ej: 12345678" required maxlength="20">
+                        <small class="form-help">Ingrese la cédula o código RFID único</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="nombre">Nombre Completo:</label>
+                        <input type="text" id="nombre" name="nombre" 
+                               placeholder="Ej: Juan Pérez García" required>
+                        <small class="form-help">Nombre completo del funcionario</small>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">➕ Agregar Funcionario</button>
+            </form>
+        </section>
+
+        <section class="form-section">
+            <h2>Modificar Funcionario Existente</h2>
+            <form action="{{ url_for('modificar_funcionario_route') }}" method="POST" class="form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="mod_identificacion">Identificación:</label>
+                        <input type="text" id="mod_identificacion" name="identificacion" 
+                               placeholder="Ingrese la identificación a modificar" required>
+                        <small class="form-help">Identificación del funcionario a modificar</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="nuevo_nombre">Nuevo Nombre:</label>
+                        <input type="text" id="nuevo_nombre" name="nuevo_nombre" 
+                               placeholder="Nuevo nombre completo" required>
+                        <small class="form-help">Nuevo nombre para el funcionario</small>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-warning">✏️ Modificar Funcionario</button>
+            </form>
+        </section>
+
+        <section class="list-section">
+            <div class="section-header">
+                <h2>Funcionarios Registrados</h2>
+                <div class="section-info">
+                    <span class="badge badge-info">Total: {{ funcionarios|length }} funcionarios</span>
+                </div>
+            </div>
+            
+            {% if funcionarios %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Identificación</th>
+                            <th>Nombre</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for funcionario in funcionarios %}
+                        <tr>
+                            <td>
+                                <strong>{{ funcionario[0] }}</strong>
+                                {% if funcionario[0]|length == 8 %}
+                                <span class="badge badge-secondary">Cédula</span>
+                                {% else %}
+                                <span class="badge badge-info">RFID</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ funcionario[1] }}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button type="button" 
+                                            onclick="rellenarModificar('{{ funcionario[0] }}', '{{ funcionario[1] }}')" 
+                                            class="btn btn-warning btn-sm">
+                                        ✏️ Modificar
+                                    </button>
+                                    <a href="{{ url_for('eliminar_funcionario_route', identificacion=funcionario[0]) }}" 
+                                       class="btn btn-danger btn-sm" 
+                                       onclick="return confirm('¿Está seguro de eliminar al funcionario {{ funcionario[1] }}?')">
+                                        🗑️ Eliminar
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>No hay funcionarios registrados en el sistema.</p>
+                <p>Utilice el formulario superior para agregar el primer funcionario.</p>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+
+    <script>
+        function rellenarModificar(identificacion, nombre) {
+            // Rellenar automáticamente el formulario de modificación
+            document.getElementById('mod_identificacion').value = identificacion;
+            document.getElementById('nuevo_nombre').value = nombre;
+            
+            // Hacer scroll suave al formulario de modificación
+            document.querySelector('.form-section:nth-child(3)').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+            
+            // Enfocar el campo de nuevo nombre
+            document.getElementById('nuevo_nombre').focus();
+        }
+
+        // Validación de formulario de agregar
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const identificacion = document.getElementById('identificacion').value;
+            const nombre = document.getElementById('nombre').value;
+            
+            if (!identificacion.trim() || !nombre.trim()) {
+                e.preventDefault();
+                alert('Por favor, complete todos los campos requeridos.');
+                return false;
+            }
+        });
+
+        // Validación de formulario de modificación
+        document.querySelectorAll('form')[1].addEventListener('submit', function(e) {
+            const identificacion = document.getElementById('mod_identificacion').value;
+            const nuevoNombre = document.getElementById('nuevo_nombre').value;
+            
+            if (!identificacion.trim() || !nuevoNombre.trim()) {
+                e.preventDefault();
+                alert('Por favor, complete todos los campos requeridos.');
+                return false;
+            }
+        });
+
+        // Mostrar mensajes de forma más destacada
+        setTimeout(() => {
+            const flashes = document.querySelectorAll('.flash-messages .alert');
+            flashes.forEach(flash => {
+                if (flash.classList.contains('alert-success')) {
+                    flash.style.animation = 'pulse 2s infinite';
+                }
+            });
+        }, 1000);
+    </script>
+</body>
+</html>

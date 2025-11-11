@@ -118,13 +118,10 @@ class RFIDReader:
         print("GPIO limpiado")
 
 
-# Instancia global del lector RFID
-rfid_reader = RFIDReader()
-
-
 def iniciar_lector_rfid():
     """Iniciar el lector RFID en un hilo separado"""
-    thread = threading.Thread(target=rfid_reader.run, daemon=True)
+    lector = RFIDReader()
+    thread = threading.Thread(target=lector.run, daemon=True)
     thread.start()
     print("Servicio RFID iniciado")
     return thread

@@ -129,7 +129,7 @@ class RFIDReader:
             try:
                 identificacion = self.leer_rfid()
                 now = datetime.now()
-                if identificacion != self.ultimo_rfid_leido and (now - self.ultimo_rfid_leido_dt).total_seconds() > 60:
+                if identificacion != self.ultimo_rfid_leido or (identificacion == self.ultimo_rfid_leido and (now - self.ultimo_rfid_leido_dt).total_seconds() > 60):
 
                     self.ultimo_rfid_leido = identificacion
                     self.ultimo_rfid_leido_dt = now

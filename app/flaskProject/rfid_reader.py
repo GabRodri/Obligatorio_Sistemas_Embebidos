@@ -4,6 +4,7 @@ import threading
 import time
 import logging
 from database import obtener_funcionario_por_id, agregar_evento
+from datetime import datetime
 
 # ===============================
 # 🔧 CONFIGURACIÓN DEL LOGGER
@@ -35,6 +36,7 @@ if not logger.hasHandlers():
 # Desactivar warnings de pines
 GPIO.setwarnings(False)
 
+DEBUG = True
 
 # ===============================
 # 📡 CLASE PRINCIPAL DEL LECTOR
@@ -47,6 +49,8 @@ class RFIDReader:
         self.led_rojo = 13
         self.setup_gpio()
         self.running = True
+        self.ultimo_rfid_leido = None
+        self.ultimo_rfid_leido_dt = None
 
     def setup_gpio(self):
         # """Configura los pines GPIO para los LEDs"""
@@ -124,14 +128,29 @@ class RFIDReader:
         while self.running:
             try:
                 identificacion = self.leer_rfid()
-                if identificacion:
-                    thread = threading.Thread(
-                        target=self.procesar_rfid,
-                        args=(identificacion,),
-                        daemon=True,
-                        name=f"RFID-{identificacion}"
-                    )
-                    thread.start()
+                now = datetime.now()
+                if identificacion != self.ultimo_rfid_leido and (now - self.ultimo_rfid_leido_dt).total_seconds() > 60:
+
+                    self.ultimo_rfid_leido = identificacion
+                    self.ultimo_rfid_leido_dt = now
+
+                    if identificacion:
+                        thread = threading.Thread(
+                            target=self.procesar_rfid,
+                            args=(identificacion,),
+                            daemon=True,
+                            name=f"RFID-{identificacion}"
+                        )
+                        thread.start()
+                else:
+                    if DEBUG:
+                        logger.info("No se registra evento en base de datos")
+                        if identificacion == self.ultimo_rfid_leido and (now - self.ultimo_rfid_leido_dt).total_seconds() > 60:
+                            logger.info("rfid igual al ultimo leido")
+                        elif identificacion != self.ultimo_rfid_leido and (now - self.ultimo_rfid_leido_dt).total_seconds() < 60:
+                            logger.info("Tiempo transcurrido menor a 60s")
+                        else:
+                            logger.info("Tiempo transcurrido menor a 60s y rfid igual al ultimo leido")
 
             except KeyboardInterrupt:
                 logger.warning("🛑 Deteniendo lector RFID...")

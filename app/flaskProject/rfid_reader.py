@@ -69,7 +69,12 @@ class RFIDReader:
 
     def leer_rfid(self):
         try:
+
+            logger.info("Entro en leer rfid")
             id, _ = self.reader.read()
+
+            logger.info("ya leyo")
+            logger.info(id)
             return str(id).zfill(8)
         except Exception as e:
             logger.error(f"Error leyendo RFID: {e}")
@@ -116,7 +121,6 @@ class RFIDReader:
 
         while self.running:
             try:
-                logger.info("Entrando en leer rfid")
                 identificacion = self.leer_rfid()
 
                 logger.info("TEST")

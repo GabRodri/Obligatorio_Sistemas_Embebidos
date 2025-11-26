@@ -29,17 +29,17 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label for="fecha_inicio">Fecha Inicio:</label>
-                        <input type="date" id="fecha_inicio" name="fecha_inicio" 
+                        <input type="date" id="fecha_inicio" name="fecha_inicio"
                                value="{{ fecha_inicio }}" required>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="fecha_fin">Fecha Fin:</label>
-                        <input type="date" id="fecha_fin" name="fecha_fin" 
+                        <input type="date" id="fecha_fin" name="fecha_fin"
                                value="{{ fecha_fin }}" required>
                     </div>
                 </div>
-                
+
                 <button type="submit" class="btn btn-primary">Consultar Eventos</button>
                 <button type="button" onclick="limpiarFechas()" class="btn btn-secondary">Limpiar</button>
             </form>
@@ -50,7 +50,7 @@
             <h2>Resultados de la Consulta</h2>
             <p class="result-count">
                 {% if eventos %}
-                    Se encontraron <strong>{{ eventos|length }}</strong> eventos entre 
+                    Se encontraron <strong>{{ eventos|length }}</strong> eventos entre
                     <strong>{{ fecha_inicio }}</strong> y <strong>{{ fecha_fin }}</strong>
                 {% elif request.method == 'POST' %}
                     No se encontraron eventos en el rango seleccionado
@@ -74,27 +74,48 @@
                     <tbody>
                         {% for evento in eventos %}
                         <tr>
+                            <!-- ID -->
                             <td>{{ evento[0] }}</td>
+
+                            <!-- Identificación -->
                             <td>{{ evento[1] }}</td>
-                            <td>{{ evento[5] or 'No registrado' }}</td>
+
+                            <!-- Nombre (CORREGIDO: ahora evento[6]) -->
+                            <td>{{ evento[6] or 'No registrado' }}</td>
+
+                            <!-- Fecha -->
                             <td>{{ evento[2] }}</td>
+
+                            <!-- Autorizado -->
                             <td>
                                 <span class="badge {{ 'badge-success' if evento[3] else 'badge-danger' }}">
                                     {{ 'Sí' if evento[3] else 'No' }}
                                 </span>
                             </td>
+
+                            <!-- Canal (CORREGIDO) -->
                             <td>
-                                <span class="badge {{ 'badge-info' if evento[4] == 'rfid' else 'badge-warning' }}">
-                                    {{ evento[4].upper() }}
-                                </span>
+                                {% if evento[4] == 'rfid' %}
+                                    <span class="badge badge-info">📡 RFID</span>
+                                {% elif evento[4] == 'web' %}
+                                    <span class="badge badge-primary">🌐 Web</span>
+                                {% else %}
+                                    <span class="badge badge-warning">🔌 Serial</span>
+                                {% endif %}
                             </td>
+
+                            <!-- Operación (CORREGIDO: ahora evento[5]) -->
                             <td>
                                 <span class="badge
-                                    {% if evento[6] == 'acceso' %}badge-secondary
-                                    {% elif evento[6] == 'alta' %}badge-success
-                                    {% elif evento[6] == 'baja' %}badge-danger
+                                    {% if evento[5] == 'acceso' %}badge-secondary
+                                    {% elif evento[5] == 'alta' %}badge-success
+                                    {% elif evento[5] == 'baja' %}badge-danger
                                     {% else %}badge-warning{% endif %}">
-                                    {{ evento[6].upper() }}
+
+                                    {% if evento[5] == 'acceso' %}🚪 Acceso
+                                    {% elif evento[5] == 'alta' %}➕ Alta
+                                    {% elif evento[5] == 'baja' %}➖ Baja
+                                    {% else %}{{ evento[5] }}{% endif %}
                                 </span>
                             </td>
                         </tr>
@@ -113,12 +134,10 @@
     </div>
 
     <script>
-        // Establecer fecha máxima como hoy
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('fecha_inicio').max = today;
         document.getElementById('fecha_fin').max = today;
 
-        // Validación: fecha inicio no puede ser mayor que fecha fin
         document.getElementById('fecha_inicio').addEventListener('change', function() {
             const fechaFin = document.getElementById('fecha_fin');
             if (this.value > fechaFin.value) {
@@ -152,7 +171,7 @@
                 setTimeout(() => {
                     const resultadosSection = document.getElementById('resultados-section');
                     if (resultadosSection) {
-                        resultadosSection.scrollIntoView({ 
+                        resultadosSection.scrollIntoView({
                             behavior: 'smooth',
                             block: 'start'
                         });

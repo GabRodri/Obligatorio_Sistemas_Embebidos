@@ -116,6 +116,7 @@ class RFIDReader:
 
         while self.running:
             try:
+                logger.info("Entrando en leer rfid")
                 identificacion = self.leer_rfid()
 
                 logger.info("TEST")

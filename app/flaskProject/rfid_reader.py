@@ -72,9 +72,9 @@ class RFIDReader:
 
             logger.info("Entro en leer rfid")
             id, _ = self.reader.read()
-
             logger.info("ya leyo")
             logger.info(id)
+
             return str(id).zfill(8)
         except Exception as e:
             logger.error(f"Error leyendo RFID: {e}")

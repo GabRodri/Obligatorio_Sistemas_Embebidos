@@ -6,7 +6,7 @@ from logger_config import setup_logger
 
 logger = setup_logger("alarma", "alarma.log", level=logging.INFO)
 
-GPIO_ALARMA = 22
+GPIO_ALARMA = 27
 
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)

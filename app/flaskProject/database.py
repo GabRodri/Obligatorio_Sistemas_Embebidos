@@ -1,5 +1,10 @@
 import sqlite3
 from datetime import datetime
+import logging
+from logger_config import setup_logger
+import traceback
+
+logger = setup_logger("database", "db.log", level=logging.INFO)
 
 
 class Database:
@@ -8,43 +13,53 @@ class Database:
         self.init_db()
 
     def init_db(self):
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
+        try:
+            conn = sqlite3.connect(self.db_name)
+            cursor = conn.cursor()
 
-        # Tabla de Funcionarios
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS funcionarios (
-                identificacion TEXT PRIMARY KEY,
-                nombre TEXT NOT NULL
-            )
-        ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS funcionarios (
+                    identificacion TEXT PRIMARY KEY,
+                    nombre TEXT NOT NULL
+                )
+            ''')
 
-        # Tabla de Eventos
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS eventos (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                identificacion TEXT NOT NULL,
-                fecha_hora TEXT NOT NULL,
-                autorizado INTEGER NOT NULL,
-                canal TEXT NOT NULL,
-                operacion TEXT NOT NULL,
-                FOREIGN KEY (identificacion) REFERENCES funcionarios (identificacion)
-            )
-        ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS eventos (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    identificacion TEXT NOT NULL,
+                    fecha_hora TEXT NOT NULL,
+                    autorizado INTEGER NOT NULL,
+                    canal TEXT NOT NULL,
+                    operacion TEXT NOT NULL,
+                    FOREIGN KEY (identificacion) REFERENCES funcionarios (identificacion)
+                )
+            ''')
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+            logger.info("Inicialización de base de datos completada")
+
+        except Exception as e:
+            logger.error(f"Error durante init_db: {e}")
+            logger.error(traceback.format_exc())
+
+        finally:
+            conn.close()
 
     def get_connection(self):
-        conn = sqlite3.connect(self.db_name)
-        # Optimizaciones para Raspberry Pi
-        conn.execute("PRAGMA journal_mode = WAL")
-        conn.execute("PRAGMA synchronous = NORMAL")
-        conn.execute("PRAGMA cache_size = -2000")
-        return conn
+        try:
+            conn = sqlite3.connect(self.db_name)
+            conn.execute("PRAGMA journal_mode = WAL")
+            conn.execute("PRAGMA synchronous = NORMAL")
+            conn.execute("PRAGMA cache_size = -2000")
+            return conn
+
+        except Exception as e:
+            logger.error(f"Error obteniendo conexión a DB: {e}")
+            logger.error(traceback.format_exc())
+            raise
 
 
-# Funciones para Funcionarios
 def agregar_funcionario(identificacion, nombre):
     db = Database()
     conn = db.get_connection()
@@ -56,11 +71,18 @@ def agregar_funcionario(identificacion, nombre):
             (identificacion, nombre)
         )
         conn.commit()
+        logger.info(f"Funcionario agregado: {identificacion} - {nombre}")
         return True, "Funcionario agregado correctamente"
+
     except sqlite3.IntegrityError:
+        logger.warning(f"Intento de duplicado de identificación: {identificacion}")
         return False, "Error: La identificación ya existe"
+
     except Exception as e:
+        logger.error(f"Error agregando funcionario {identificacion}: {e}")
+        logger.error(traceback.format_exc())
         return False, f"Error: {str(e)}"
+
     finally:
         conn.close()
 
@@ -70,11 +92,19 @@ def obtener_funcionarios():
     conn = db.get_connection()
     cursor = conn.cursor()
 
-    cursor.execute('SELECT * FROM funcionarios ORDER BY nombre')
-    funcionarios = cursor.fetchall()
-    conn.close()
+    try:
+        cursor.execute('SELECT * FROM funcionarios ORDER BY nombre')
+        funcionarios = cursor.fetchall()
+        logger.info(f"Consulta funcionarios: {len(funcionarios)} encontrados")
+        return funcionarios
 
-    return funcionarios
+    except Exception as e:
+        logger.error(f"Error obteniendo lista de funcionarios: {e}")
+        logger.error(traceback.format_exc())
+        return []
+
+    finally:
+        conn.close()
 
 
 def obtener_funcionario_por_id(identificacion):
@@ -82,11 +112,19 @@ def obtener_funcionario_por_id(identificacion):
     conn = db.get_connection()
     cursor = conn.cursor()
 
-    cursor.execute('SELECT * FROM funcionarios WHERE identificacion = ?', (identificacion,))
-    funcionario = cursor.fetchone()
-    conn.close()
+    try:
+        cursor.execute('SELECT * FROM funcionarios WHERE identificacion = ?', (identificacion,))
+        funcionario = cursor.fetchone()
+        logger.info(f"Consulta funcionario {identificacion}: {'ENCONTRADO' if funcionario else 'NO ENCONTRADO'}")
+        return funcionario
 
-    return funcionario
+    except Exception as e:
+        logger.error(f"Error obteniendo funcionario {identificacion}: {e}")
+        logger.error(traceback.format_exc())
+        return None
+
+    finally:
+        conn.close()
 
 
 def modificar_funcionario(identificacion, nuevo_nombre):
@@ -101,14 +139,21 @@ def modificar_funcionario(identificacion, nuevo_nombre):
         )
         conn.commit()
         affected = cursor.rowcount
-        conn.close()
 
         if affected > 0:
+            logger.info(f"Funcionario modificado: {identificacion} → {nuevo_nombre}")
             return True, "Funcionario modificado correctamente"
         else:
+            logger.warning(f"Modificación fallida: {identificacion} no existe")
             return False, "Error: No se encontró el funcionario"
+
     except Exception as e:
+        logger.error(f"Error modificando funcionario {identificacion}: {e}")
+        logger.error(traceback.format_exc())
         return False, f"Error: {str(e)}"
+
+    finally:
+        conn.close()
 
 
 def eliminar_funcionario(identificacion):
@@ -117,28 +162,31 @@ def eliminar_funcionario(identificacion):
     cursor = conn.cursor()
 
     try:
-        # Primero eliminamos los eventos asociados al funcionario
         cursor.execute('DELETE FROM eventos WHERE identificacion = ?', (identificacion,))
-        # Luego eliminamos el funcionario
         cursor.execute('DELETE FROM funcionarios WHERE identificacion = ?', (identificacion,))
         conn.commit()
         affected = cursor.rowcount
-        conn.close()
 
         if affected > 0:
+            logger.info(f"Funcionario eliminado: {identificacion}")
             return True, "Funcionario eliminado correctamente"
         else:
+            logger.warning(f"Intento de eliminar funcionario inexistente: {identificacion}")
             return False, "Error: No se encontró el funcionario"
+
     except Exception as e:
+        logger.error(f"Error eliminando funcionario {identificacion}: {e}")
+        logger.error(traceback.format_exc())
         return False, f"Error: {str(e)}"
 
+    finally:
+        conn.close()
 
-# Funciones para Eventos
+
 def agregar_evento(identificacion, autorizado, operacion, canal):
     db = Database()
     conn = db.get_connection()
     cursor = conn.cursor()
-
     fecha_hora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
     try:
@@ -147,10 +195,16 @@ def agregar_evento(identificacion, autorizado, operacion, canal):
             (identificacion, fecha_hora, autorizado, operacion, canal)
         )
         conn.commit()
-        conn.close()
+        logger.info(f"Evento agregado: ID={identificacion}, op={operacion}, canal={canal}, autorizado={autorizado}")
         return True, "Evento registrado correctamente"
+
     except Exception as e:
+        logger.error(f"Error agregando evento para {identificacion}: {e}")
+        logger.error(traceback.format_exc())
         return False, f"Error: {str(e)}"
+
+    finally:
+        conn.close()
 
 
 def obtener_eventos(limite=50):
@@ -158,17 +212,25 @@ def obtener_eventos(limite=50):
     conn = db.get_connection()
     cursor = conn.cursor()
 
-    cursor.execute('''
-        SELECT e.*, f.nombre 
-        FROM eventos e 
-        LEFT JOIN funcionarios f ON e.identificacion = f.identificacion
-        ORDER BY e.fecha_hora DESC
-        LIMIT ?
-    ''', (limite,))
-    eventos = cursor.fetchall()
-    conn.close()
+    try:
+        cursor.execute('''
+            SELECT e.*, f.nombre 
+            FROM eventos e 
+            LEFT JOIN funcionarios f ON e.identificacion = f.identificacion
+            ORDER BY e.fecha_hora DESC
+            LIMIT ?
+        ''', (limite,))
+        eventos = cursor.fetchall()
+        logger.info(f"Consulta últimos eventos: {len(eventos)} encontrados")
+        return eventos
 
-    return eventos
+    except Exception as e:
+        logger.error(f"Error obteniendo eventos: {e}")
+        logger.error(traceback.format_exc())
+        return []
+
+    finally:
+        conn.close()
 
 
 def consultar_eventos_por_fecha(fecha_inicio, fecha_fin):
@@ -176,22 +238,29 @@ def consultar_eventos_por_fecha(fecha_inicio, fecha_fin):
     conn = db.get_connection()
     cursor = conn.cursor()
 
-    # Convertir las fechas para incluir todo el día
     fecha_inicio_completa = f"{fecha_inicio} 00:00:00"
     fecha_fin_completa = f"{fecha_fin} 23:59:59"
 
-    cursor.execute('''
-        SELECT e.*, f.nombre 
-        FROM eventos e 
-        LEFT JOIN funcionarios f ON e.identificacion = f.identificacion
-        WHERE e.fecha_hora BETWEEN ? AND ?
-        ORDER BY e.fecha_hora DESC
-    ''', (fecha_inicio_completa, fecha_fin_completa))
+    try:
+        cursor.execute('''
+            SELECT e.*, f.nombre 
+            FROM eventos e 
+            LEFT JOIN funcionarios f ON e.identificacion = f.identificacion
+            WHERE e.fecha_hora BETWEEN ? AND ?
+            ORDER BY e.fecha_hora DESC
+        ''', (fecha_inicio_completa, fecha_fin_completa))
 
-    eventos = cursor.fetchall()
-    conn.close()
+        eventos = cursor.fetchall()
+        logger.info(f"Consulta eventos por fecha {fecha_inicio} → {fecha_fin}: {len(eventos)} encontrados")
+        return eventos
 
-    return eventos
+    except Exception as e:
+        logger.error(f"Error consultando eventos por fecha: {e}")
+        logger.error(traceback.format_exc())
+        return []
+
+    finally:
+        conn.close()
 
 
 def obtener_estadisticas():
@@ -199,27 +268,59 @@ def obtener_estadisticas():
     conn = db.get_connection()
     cursor = conn.cursor()
 
-    # Total de eventos
-    cursor.execute('SELECT COUNT(*) FROM eventos')
-    total_eventos = cursor.fetchone()[0]
+    try:
+        cursor.execute('SELECT COUNT(*) FROM eventos')
+        total_eventos = cursor.fetchone()[0]
 
-    # Eventos autorizados vs no autorizados
-    cursor.execute('SELECT autorizado, COUNT(*) FROM eventos GROUP BY autorizado')
-    auth_stats = cursor.fetchall()
+        cursor.execute('SELECT autorizado, COUNT(*) FROM eventos GROUP BY autorizado')
+        auth_stats = cursor.fetchall()
 
-    # Eventos por canal
-    cursor.execute('SELECT canal, COUNT(*) FROM eventos GROUP BY canal')
-    canal_stats = cursor.fetchall()
+        cursor.execute('SELECT canal, COUNT(*) FROM eventos GROUP BY canal')
+        canal_stats = cursor.fetchall()
 
-    # Total de funcionarios
-    cursor.execute('SELECT COUNT(*) FROM funcionarios')
-    total_funcionarios = cursor.fetchone()[0]
+        cursor.execute('SELECT COUNT(*) FROM funcionarios')
+        total_funcionarios = cursor.fetchone()[0]
 
-    conn.close()
+        logger.info("Estadísticas calculadas correctamente")
 
-    return {
-        'total_eventos': total_eventos,
-        'auth_stats': dict(auth_stats),
-        'canal_stats': dict(canal_stats),
-        'total_funcionarios': total_funcionarios
-    }
+        return {
+            'total_eventos': total_eventos,
+            'auth_stats': dict(auth_stats),
+            'canal_stats': dict(canal_stats),
+            'total_funcionarios': total_funcionarios
+        }
+
+    except Exception as e:
+        logger.error(f"Error obteniendo estadísticas: {e}")
+        logger.error(traceback.format_exc())
+        return {}
+
+    finally:
+        conn.close()
+
+
+def obtener_intentos_fallidos_recientes(identificacion, minutos=1):
+    db = Database()
+    conn = db.get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            SELECT COUNT(*)
+            FROM eventos
+            WHERE identificacion = ?
+              AND autorizado = 0 
+              AND datetime(fecha_hora) >= datetime('now', ?)
+        ''', (identificacion, f'-{minutos} minutes'))
+
+        cantidad = cursor.fetchone()[0]
+        logger.info(f"Intentos fallidos recientes para {identificacion}: {cantidad}")
+        return cantidad
+
+    except Exception as e:
+        logger.error(f"Error al obtener intentos fallidos para {identificacion}: {e}")
+        logger.error(traceback.format_exc())
+        return 0
+
+    finally:
+        conn.close()

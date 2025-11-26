@@ -307,7 +307,7 @@ if __name__ == "__main__":
 
     try:
         logger.info("Iniciando lector PIC…")
-        # iniciar_lector_pic()
+        iniciar_lector_pic()
     except Exception as e:
         logger.error(f"Error iniciando lector PIC: {e}")
         logger.error(traceback.format_exc())

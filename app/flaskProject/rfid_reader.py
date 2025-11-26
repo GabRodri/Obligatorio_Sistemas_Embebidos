@@ -87,7 +87,7 @@ class RFIDReader:
             logger.error(traceback.format_exc())
             return False
 
-    def procesar_rfid(self, identificacion):
+    def  procesar_rfid(self, identificacion):
         try:
             logger.info(f"RFID leído: {identificacion}")
 
@@ -117,6 +117,10 @@ class RFIDReader:
         while self.running:
             try:
                 identificacion = self.leer_rfid()
+
+                logger.info("TEST")
+                logger.info(identificacion)
+
                 now = datetime.now()
 
                 if (

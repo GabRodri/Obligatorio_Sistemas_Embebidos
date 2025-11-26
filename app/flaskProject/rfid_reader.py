@@ -7,6 +7,7 @@ from datetime import datetime
 
 from database import obtener_funcionario_por_id, agregar_evento
 from logger_config import setup_logger
+import logging
 
 # ===============================
 # 🔧 LOGGER PROFESIONAL (ROTATING)

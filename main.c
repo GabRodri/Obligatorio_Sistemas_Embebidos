@@ -5,7 +5,7 @@
 
 #define _XTAL_FREQ 8000000
 
-// Definición de pines para LEDs
+// DefiniciÃ³n de pines para LEDs
 #define LED_VERDE_PORT RB0
 #define LED_ROJO_PORT  RB1
 #define LED_VERDE_TRIS TRISB0
@@ -17,6 +17,7 @@ typedef struct {
     unsigned int tiempo;
     char cedula[9];
     unsigned char autorizado;
+    unsigned char tipoOperacion;
 } Evento;
 
 volatile unsigned int t0_overflows = 0;
@@ -32,7 +33,7 @@ void __interrupt() isr(void) {
         T0IF = 0;               // Limpia bandera
         t0_overflows++;         // Cuenta overflows
 
-        if (t0_overflows >= 244) {  // 244 × 4.096 ms ? 1 segundo
+        if (t0_overflows >= 244) {  // 244 Ã— 4.096 ms ? 1 segundo
             t0_overflows = 0;
             segundos++;
         }
@@ -48,7 +49,7 @@ void timer0_init(void) {
 
     TMR0 = 0;
     T0IF = 0;
-    T0IE = 1;    // Habilita interrupción de Timer0
+    T0IE = 1;    // Habilita interrupciÃ³n de Timer0
     GIE = 1;     // Habilita interrupciones globales
 }
 
@@ -56,15 +57,15 @@ void uart_init(void) {
     TRISC7 = 1;   // RX (pin RC7) como entrada
     TRISC6 = 0;   // TX (pin RC6) como salida
     SPBRG = 51;   // Baud rate 9600 - 8MHz
-    SYNC = 0;     // Modo asíncrono
+    SYNC = 0;     // Modo asÃ­ncrono
     BRGH = 1;     // High baud rate
     SPEN = 1;     // Habilitar puerto serial
-    CREN = 1;     // Habilitar recepción continua
-    TXEN = 1;     // Habilitar transmisión
+    CREN = 1;     // Habilitar recepciÃ³n continua
+    TXEN = 1;     // Habilitar transmisiÃ³n
 }
 
 void uart_write(char data) {
-    while(!TXIF);  // Esperar a que el buffer de transmisión esté vacío
+    while(!TXIF);  // Esperar a que el buffer de transmisiÃ³n estÃ© vacÃ­o
     TXREG = data;
 }
 
@@ -80,7 +81,7 @@ void uint_a_string(unsigned int num, char *str, unsigned char digits) {
     unsigned char i = 0;
     unsigned char j;
     
-    // Convertir número a string (invertido)
+    // Convertir nÃºmero a string (invertido)
     if(num == 0) {
         temp[i++] = '0';
     } else {
@@ -102,12 +103,13 @@ void uint_a_string(unsigned int num, char *str, unsigned char digits) {
     str[j] = '\0';
 }
 
-void agregar_evento(const char *cedula, unsigned char autorizado) {
+void agregar_evento(const char *cedula, unsigned char autorizado, unsigned char tipoOperacion) {
     if(num_eventos < MAX_EVENTOS) {
         eventos[evento_index].tiempo = segundos;
         eventos[evento_index].autorizado = autorizado;
+        eventos[evento_index].tipoOperacion = tipoOperacion;
         
-        // Copiar cédula
+        // Copiar cÃ©dula
         unsigned char i;
         for(i = 0; i < 8 && cedula[i] != '\0'; i++) {
             eventos[evento_index].cedula[i] = cedula[i];
@@ -134,6 +136,8 @@ void enviar_eventos_pendientes(void) {
         uart_write_string(eventos[i].cedula);
         uart_write_string(", autorizado=");
         uart_write_string(eventos[i].autorizado ? "Si" : "No");
+        uart_write_string(", operacion=");
+        uart_write_string(eventos[i].tipoOperacion == 0 ? "Acceso" : eventos[i].tipoOperacion == 1 ? "Alta" : "Baja");
         uart_write_string("\r\n");
     }
     
@@ -157,7 +161,7 @@ void verificar_envio_eventos(void) {
         }
     }
     
-    // Verificar si el buffer está lleno
+    // Verificar si el buffer estÃ¡ lleno
     if(num_eventos >= MAX_EVENTOS) {
         enviar_eventos_pendientes();
     }
@@ -165,7 +169,7 @@ void verificar_envio_eventos(void) {
 
 char leer_codigo_barras(void) {
     if(RCIF) {              // Si hay dato disponible
-        return RCREG;       // Leer y retornar el carácter
+        return RCREG;       // Leer y retornar el carÃ¡cter
     }
     return 0;               // No hay dato disponible
 }
@@ -199,13 +203,13 @@ void cargar_cedula(uint8_t numero_cedula, const char *cedula) {
 }
 
 uint8_t comparar_con_cedulas(const char *codigo_leido) {
-    char cedula_actual[9];  // 8 dígitos + null terminator
+    char cedula_actual[9];  // 8 dÃ­gitos + null terminator
    
-    // Comparar con las 5 cédulas almacenadas
+    // Comparar con las 5 cÃ©dulas almacenadas
     for(uint8_t i = 0; i < 5; i++) {
         uint8_t direccion_base = i * 8;
        
-        // Leer cédula de la EEPROM
+        // Leer cÃ©dula de la EEPROM
         for(uint8_t j = 0; j < 8; j++) {
             cedula_actual[j] = eeprom_read(direccion_base + j);
         }
@@ -226,6 +230,33 @@ uint8_t comparar_con_cedulas(const char *codigo_leido) {
     return 0;  // No encontrada
 }
 
+uint8_t comparar_con_cedulas_con_indice(const char *codigo_leido) {
+    char cedula_actual[9];  // 8 dÃ­gitos + null terminator
+   
+    for(uint8_t i = 0; i < 5; i++) {
+        uint8_t direccion_base = i * 8;
+       
+        // Leer cÃ©dula de la EEPROM
+        for(uint8_t j = 0; j < 8; j++) {
+            cedula_actual[j] = eeprom_read(direccion_base + j);
+        }
+        cedula_actual[8] = '\0';  // Null terminator
+       
+        // Comparar strings
+        uint8_t iguales = 1;
+        for(uint8_t k = 0; k < 8; k++) {
+            if(codigo_leido[k] != cedula_actual[k]) {
+                iguales = 0;
+                break;
+            }
+        }
+        if(iguales) {
+            return direccion_base;  // Encontrada
+        }
+    }
+    return 255;  // No encontrada
+}
+
 void controlar_leds(uint8_t autorizado) {
     if(autorizado) {
         LED_VERDE_PORT = 1;  // Encender LED verde
@@ -238,11 +269,23 @@ void controlar_leds(uint8_t autorizado) {
     }
 }
 
+
 void main(void) {
-    char codigo_leido[20];  // Buffer para almacenar el código leído
-    uint8_t index = 0;      // Índice del buffer
-    char caracter = 0;      // Carácter leído
-   
+    char codigo_leido[20];  // Buffer para almacenar el cÃ³digo leÃ­do
+    uint8_t index = 0;      // Ãndice del buffer
+    char caracter = 0;      // CarÃ¡cter leÃ­do
+    uint8_t numeroCedula = 1;
+    unsigned char tipoOperacion = 0;
+    uint8_t autorizado = 0;
+    
+    for(uint8_t i = 0; i < 5; i++) {
+        if(eeprom_read(i*8) != 0xFF) {
+            numeroCedula = i + 1;
+        }
+    }
+    int flag_alta = 0;
+    int flag_baja = 0;
+    
     // Configurar pines de LEDs como salidas
     LED_VERDE_TRIS = 0;
     LED_ROJO_TRIS = 0;
@@ -254,13 +297,13 @@ void main(void) {
     uart_init();            // Inicializar UART
     timer0_init();          // Inicializar Timer0
    
-    if(eeprom_read(0x00) == 0xFF){  
+    /*if(eeprom_read(0x00) == 0xFF){  
         cargar_cedula(1, "49432642");
         cargar_cedula(2, "55787807");
         cargar_cedula(3, "50329945");
         cargar_cedula(4, "49852969");
         cargar_cedula(5, "49374418");
-    }
+    }*/
    
     while(1) {
         // Verificar condiciones para enviar eventos
@@ -268,30 +311,84 @@ void main(void) {
         caracter = leer_codigo_barras();
        
         if(caracter != 0) {
-            if(caracter == '\r' || caracter == '\n') {            
+            if(caracter == 'A'){
+                flag_alta = 1;
+                continue;
+            }
+            else if(caracter == 'B'){
+                flag_baja = 1;
+                continue;
+            }
+            
+            if (flag_alta == 1 && index == 8 && numeroCedula <= 5){
+                uint8_t darAlta = comparar_con_cedulas(codigo_leido);
+                tipoOperacion = 1;
+                flag_alta = 0;
+                if(!darAlta){
+                    // Si darAlta es 0, entonces damos de alta la cedula
+                    autorizado = 1;
+                    cargar_cedula(numeroCedula, codigo_leido);
+                    numeroCedula = numeroCedula + 1;
+                }
+                else{
+                    autorizado = 0;
+                }
+            }
+            
+            if (flag_baja == 1 && index == 8 && numeroCedula > 0){
+                uint8_t direccionBase = comparar_con_cedulas_con_indice(codigo_leido);
+                tipoOperacion = 2;
+                flag_baja = 0;
+                if(direccionBase != 255 && numeroCedula > 0){
+                    char ultima_cedula[9];
+                
+                    for(uint8_t j = 0; j < 8; j++) {
+                        ultima_cedula[j] = eeprom_read((numeroCedula-1)*8 + j);
+                    }
+                    ultima_cedula[8] = '\0';  // Null terminator
+
+                    cargar_cedula((direccionBase/8)+1, ultima_cedula);
+
+                    eeprom_write((numeroCedula-1)*8, 0xFF);
+                    numeroCedula = numeroCedula - 1;
+                    autorizado = 1;
+                } else {
+                    // Si entra aca, esta cedula no se puede dar de baja
+                    autorizado = 0;
+                }
+            }
+            
+            if((caracter == '\r' || caracter == '\n') && (flag_alta == 0 && flag_baja == 0)){            
                 codigo_leido[index] = '\0';
-               
+
                 // Verificar si es exactamente 8 caracteres
                 if(index == 8) {
-                    uint8_t autorizado = comparar_con_cedulas(codigo_leido);
+                    if (tipoOperacion != 1 && tipoOperacion != 2){
+                        tipoOperacion = 0;
+                        autorizado = comparar_con_cedulas(codigo_leido);
+                    }
                     
                     // Agregar evento al buffer
-                    agregar_evento(codigo_leido, autorizado);
+                    agregar_evento(codigo_leido, autorizado, tipoOperacion);
                     
-                    controlar_leds(autorizado);  // Controlar LEDs según resultado
+                    // Reset de tipo de operacion
+                    tipoOperacion = 0;
+                    controlar_leds(autorizado);  // Controlar LEDs segÃºn resultado
                     
                 } else {
                     codigo_leido[7]='@';
                     // Agregar evento al buffer (incluso si falla)
-                    agregar_evento(codigo_leido, 0);
+                    agregar_evento(codigo_leido, 0, tipoOperacion);
                     
+                    // Reset de tipo de operacion
+                    tipoOperacion = 0;
                     controlar_leds(0);  // Longitud incorrecta = No autorizado
                 }
                 index = 0;                  
                 caracter = 0;
                
             } else if(index <= 8) {
-                codigo_leido[index] = caracter;  // Almacenar carácter en buffer
+                codigo_leido[index] = caracter;  // Almacenar carÃ¡cter en buffer
                 index++;
             }
         }

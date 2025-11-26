@@ -7,7 +7,6 @@ from database import agregar_evento, agregar_funcionario, eliminar_funcionario, 
 SERIAL_PORT = '/dev/ttyAMA0'
 BAUD_RATE = 9600
 
-
 class PICCommunicator:
     def __init__(self):
         self.ser = None
@@ -61,36 +60,44 @@ class PICCommunicator:
 
             # Procesar eventos de códigos de barras
             if linea.startswith("tiempo="):
-                # Formato: "tiempo=0000, cedula=12345678, autorizado=Si/No"
+                # Formato: "tiempo=0000, cedula=12345678, autorizado=Si/No, operacion=acceso/alta/baja"
                 partes = linea.split(', ')
-                if len(partes) == 3:
+                if len(partes) == 4:
                     cedula = partes[1].split('=')[1]
                     autorizado_str = partes[2].split('=')[1]
                     autorizado = 1 if autorizado_str == 'Si' else 0
+                    operacion_str = partes[3].split('=')[1]
 
                     # Registrar evento en base de datos
-                    agregar_evento(cedula, autorizado, 'barcode')
+                    agregar_evento(cedula, autorizado, operacion_str, 'serial')
                     print(f"Evento registrado: {cedula} - {'Autorizado' if autorizado else 'Denegado'}")
 
-            # Procesar confirmaciones de Altas/Bajas
-            elif "Alta exitosa" in linea or "Baja exitosa" in linea:
-                print(f"Confirmación PIC: {linea}")
+                    success = False
+                    if operacion_str == "Alta" and autorizado == 1:
+                        success, _ = agregar_funcionario(cedula, "")
+                    elif operacion_str == "Baja" and autorizado == 1:
+                        success, _ = eliminar_funcionario(cedula)
+
+                    if success:
+                        print(f"Confirmación PIC: {linea}")
 
         except Exception as e:
             print(f"Error procesando evento PIC: {e}")
 
-
 # Instancia global del comunicador
 pic_comm = PICCommunicator()
 
+def dar_de_alta_funcionario_en_pic(identificacion):
+    pic_comm.enviar_comando_pic('A', identificacion)
 
 # Funciones de sincronización con PIC
-def agregar_funcionario_con_sinc(identificacion, nombre):
+def agregar_funcionario_con_sinc(identificacion, nombre, es_cedula):
     """Agrega funcionario y sincroniza con PIC"""
     success, mensaje = agregar_funcionario(identificacion, nombre)
 
-    if success:
+    if success and es_cedula:
         # Enviar comando de ALTA al PIC
+        # Consideramos que si tiene 8 digitos es una cedula
         if pic_comm.enviar_comando_pic('A', identificacion):
             mensaje += " - Sincronizado con PIC"
         else:
@@ -99,11 +106,11 @@ def agregar_funcionario_con_sinc(identificacion, nombre):
     return success, mensaje
 
 
-def eliminar_funcionario_con_sinc(identificacion):
+def eliminar_funcionario_con_sinc(identificacion, es_cedula):
     """Elimina funcionario y sincroniza con PIC"""
     success, mensaje = eliminar_funcionario(identificacion)
 
-    if success:
+    if success and es_cedula:
         # Enviar comando de BAJA al PIC
         if pic_comm.enviar_comando_pic('B', identificacion):
             mensaje += " - Sincronizado con PIC"

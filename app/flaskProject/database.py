@@ -27,6 +27,7 @@ class Database:
                 fecha_hora TEXT NOT NULL,
                 autorizado INTEGER NOT NULL,
                 canal TEXT NOT NULL,
+                operacion TEXT NOT NULL,
                 FOREIGN KEY (identificacion) REFERENCES funcionarios (identificacion)
             )
         ''')
@@ -133,7 +134,7 @@ def eliminar_funcionario(identificacion):
 
 
 # Funciones para Eventos
-def agregar_evento(identificacion, autorizado, canal):
+def agregar_evento(identificacion, autorizado, operacion, canal):
     db = Database()
     conn = db.get_connection()
     cursor = conn.cursor()
@@ -142,8 +143,8 @@ def agregar_evento(identificacion, autorizado, canal):
 
     try:
         cursor.execute(
-            'INSERT INTO eventos (identificacion, fecha_hora, autorizado, canal) VALUES (?, ?, ?, ?)',
-            (identificacion, fecha_hora, autorizado, canal)
+            'INSERT INTO eventos (identificacion, fecha_hora, autorizado, operacion, canal) VALUES (?, ?, ?, ?, ?)',
+            (identificacion, fecha_hora, autorizado, operacion, canal)
         )
         conn.commit()
         conn.close()

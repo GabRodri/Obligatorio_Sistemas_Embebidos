@@ -64,12 +64,18 @@
                             <th>Fecha y Hora</th>
                             <th>Autorizado</th>
                             <th>Canal</th>
+                            <th>Operación</th>
                         </tr>
                     </thead>
                     <tbody>
+
                         {% for evento in eventos %}
                         <tr class="{{ 'row-authorized' if evento[3] else 'row-denied' }}">
+
+                            <!-- ID -->
                             <td><code>#{{ evento[0] }}</code></td>
+
+                            <!-- Identificación -->
                             <td>
                                 <strong>{{ evento[1] }}</strong>
                                 {% if evento[1]|length == 8 %}
@@ -78,32 +84,57 @@
                                 <span class="badge badge-info">RFID</span>
                                 {% endif %}
                             </td>
+
+                            <!-- Nombre (evento[6]) -->
                             <td>
-                                {% if evento[5] %}
-                                {{ evento[5] }}
+                                {% if evento[6] %}
+                                {{ evento[6] }}
                                 {% else %}
                                 <span class="text-muted">No registrado</span>
                                 {% endif %}
                             </td>
+
+                            <!-- Fecha -->
                             <td>
                                 <span class="datetime">{{ evento[2] }}</span>
                             </td>
+
+                            <!-- Autorizado -->
                             <td>
                                 <span class="badge {{ 'badge-success' if evento[3] else 'badge-danger' }}">
                                     {{ '✅ Sí' if evento[3] else '❌ No' }}
                                 </span>
                             </td>
+
+                            <!-- Canal -->
                             <td>
-                                <span class="badge {{ 'badge-info' if evento[4] == 'rfid' else 'badge-warning' }}">
-                                    {% if evento[4] == 'rfid' %}
-                                    📡 RFID
-                                    {% else %}
-                                    🔌 Serial
-                                    {% endif %}
+                                {% if evento[4] == 'rfid' %}
+                                    <span class="badge badge-info">📡 RFID</span>
+                                {% elif evento[4] == 'serial' %}
+                                    <span class="badge badge-primary">🔌 Serial</span>
+                                {% else %}
+                                    <span class="badge badge-warning"> </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Operación (evento[5]) -->
+                            <td>
+                                <span class="badge
+                                    {% if evento[5] == 'acceso' %}badge-secondary
+                                    {% elif evento[5] == 'alta' %}badge-success
+                                    {% elif evento[5] == 'baja' %}badge-danger
+                                    {% else %}badge-warning{% endif %}">
+
+                                    {% if evento[5] == 'acceso' %}🚪 Acceso
+                                    {% elif evento[5] == 'alta' %}➕ Alta
+                                    {% elif evento[5] == 'baja' %}➖ Baja
+                                    {% else %}{{ evento[5] }}{% endif %}
                                 </span>
                             </td>
+
                         </tr>
                         {% endfor %}
+
                     </tbody>
                 </table>
             </div>
@@ -126,7 +157,7 @@
             location.reload();
         }
 
-        // Mejorar la visualización de fechas
+        // Convertir fechas a formato local
         document.addEventListener('DOMContentLoaded', function() {
             const dateElements = document.querySelectorAll('.datetime');
             dateElements.forEach(el => {

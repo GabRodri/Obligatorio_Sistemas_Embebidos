@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
 from database import *
-from pic_communicator import iniciar_lector_pic, agregar_funcionario_con_sinc, eliminar_funcionario_con_sinc
-from rfid_reader import iniciar_lector_rfid
+from pic_communicator import iniciar_lector_pic, agregar_funcionario_con_sinc, eliminar_funcionario_con_sinc, dar_de_alta_funcionario_en_pic
+from time import sleep
+# from rfid_reader import iniciar_lector_rfid
 
 app = Flask(__name__)
 app.secret_key = 'clave_secreta_para_mensajes_flash'
@@ -46,17 +47,55 @@ def gestion_funcionarios():
     funcionarios = obtener_funcionarios()
     return render_template('funcionarios.html', funcionarios=funcionarios)
 
+def verificar_si_es_cedula(identificacion):
+    if len(identificacion) == 8 and identificacion.isdigit():
+        es_cedula = True
+        canal = "serial"
+    elif len(identificacion) < 8:
+        es_cedula = False
+        canal = ""
+    else:
+        es_cedula = False
+        canal = "rfid"
+
+    return es_cedula, canal
+
+@app.route('/sincronizar_funcionarios_pic', methods=['POST'])
+def sincronizar_funcionarios_pic():
+    funcionarios = obtener_funcionarios()
+
+    total_enviados = 0
+    total_ignorados = 0
+
+    for identificacion, nombre in funcionarios:
+        es_cedula, canal = verificar_si_es_cedula(identificacion)
+
+        if es_cedula:
+            dar_de_alta_funcionario_en_pic( identificacion)
+            total_enviados += 1
+            sleep(1)  # Espera fija entre envíos
+        else:
+            total_ignorados += 1
+
+    flash(f"Se enviaron {total_enviados} funcionarios al PIC. "
+          f"{total_ignorados} fueron ignorados por no ser cédula.", "success")
+
+    return redirect(url_for('gestion_funcionarios'))
 
 @app.route('/agregar_funcionario', methods=['POST'])
 def agregar_funcionario_route():
     identificacion = request.form['identificacion']
     nombre = request.form['nombre']
 
-    success, mensaje = agregar_funcionario_con_sinc(identificacion, nombre)
+    es_cedula, canal = verificar_si_es_cedula(identificacion)
+
+    success, mensaje = agregar_funcionario_con_sinc(identificacion, nombre, es_cedula)
 
     if success:
+        _, _ = agregar_evento(identificacion, autorizado="Si", operacion='Alta', canal=canal)
         flash(mensaje, 'success')
     else:
+        _, _ = agregar_evento(identificacion, autorizado="No", operacion='Alta', canal=canal)
         flash(mensaje, 'error')
 
     return redirect(url_for('gestion_funcionarios'))
@@ -67,11 +106,15 @@ def modificar_funcionario_route():
     identificacion = request.form['identificacion']
     nuevo_nombre = request.form['nuevo_nombre']
 
+    _, canal = verificar_si_es_cedula(identificacion)
+
     success, mensaje = modificar_funcionario(identificacion, nuevo_nombre)
 
     if success:
+        _, _ = agregar_evento(identificacion, autorizado="Si", operacion='Modificación', canal=canal)
         flash(mensaje, 'success')
     else:
+        _, _ = agregar_evento(identificacion, autorizado="No", operacion='Modificación', canal=canal)
         flash(mensaje, 'error')
 
     return redirect(url_for('gestion_funcionarios'))
@@ -79,11 +122,15 @@ def modificar_funcionario_route():
 
 @app.route('/eliminar_funcionario/<identificacion>')
 def eliminar_funcionario_route(identificacion):
-    success, mensaje = eliminar_funcionario_con_sinc(identificacion)
+
+    es_cedula, canal = verificar_si_es_cedula(identificacion)
+    success, mensaje = eliminar_funcionario_con_sinc(identificacion, es_cedula)
 
     if success:
+        _, _ = agregar_evento(identificacion, autorizado="Si", operacion='Baja', canal=canal)
         flash(mensaje, 'success')
     else:
+        _, _ = agregar_evento(identificacion, autorizado="No", operacion='Baja', canal=canal)
         flash(mensaje, 'error')
 
     return redirect(url_for('gestion_funcionarios'))
@@ -141,7 +188,7 @@ def api_evento():
         funcionario = obtener_funcionario_por_id(identificacion)
         autorizado = 1 if funcionario else 0
 
-        success, mensaje = agregar_evento(identificacion, autorizado, canal)
+        success, mensaje = agregar_evento(identificacion, autorizado, 'api', canal)
 
         if success:
             return jsonify({
@@ -183,15 +230,10 @@ if __name__ == '__main__':
     print("Iniciando todos los servicios...")
 
     # ✅ Iniciar servicios solo una vez
-    try:
-        iniciar_lector_rfid()
-    except Exception as e:
-        print(f"❌ Error iniciando lector RFID: {e}")
-
-    try:
-        iniciar_lector_pic()
-    except Exception as e:
-        print(f"❌ Error iniciando comunicación con PIC: {e}")
+    # try:
+    #     iniciar_lector_rfid()
+    # except Exception as e:
+    #     print(f"❌ Error iniciando lector RFID: {e}")
 
     print("✅ Todos los servicios iniciados correctamente.")
     print("=" * 60)

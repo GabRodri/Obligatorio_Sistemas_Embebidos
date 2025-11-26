@@ -122,7 +122,7 @@ class RFIDReader:
                 if (
                     identificacion
                     and (identificacion != self.ultimo_rfid_leido
-                         or (now - self.ultimo_rfid_leido_dt).total_seconds() > 60)
+                         or (now - self.ultimo_rfid_leido_dt).total_seconds() > 5)
                 ):
                     self.ultimo_rfid_leido = identificacion
                     self.ultimo_rfid_leido_dt = now

@@ -9,6 +9,7 @@ from pic_communicator import (
 )
 from time import sleep
 from alarma import activar_alarma_led
+from rfid_reader import iniciar_lector_rfid
 from logger_config import setup_logger
 
 logger = setup_logger("app", "app.log", level=logging.INFO)
@@ -308,6 +309,11 @@ if __name__ == "__main__":
     try:
         logger.info("Iniciando lector PIC…")
         iniciar_lector_pic()
+
+
+        logger.info("Iniciando lector RFID…")
+        iniciar_lector_rfid()
+
     except Exception as e:
         logger.error(f"Error iniciando lector PIC: {e}")
         logger.error(traceback.format_exc())

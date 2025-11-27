@@ -10,7 +10,7 @@
     <div class="container">
         <header>
             <h1>Sistema de Gestión de Eventos y Funcionarios</h1>
-            <p>Base de datos: <strong>Database.db</strong> (Limpia)</p>
+            <p>Base de datos: <strong>Database.db</strong> </p>
         </header>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -63,11 +63,11 @@
                         <small>{% if estadisticas.total_eventos == 0 %}No hay eventos registrados{% endif %}</small>
                     </div>
                     <div class="stat-card">
-                        <h3>Eventos Autorizados</h3>
+                        <h3>Accesos Autorizados</h3>
                         <p class="stat-number">{{ estadisticas.auth_stats.get(1, 0) }}</p>
                     </div>
                     <div class="stat-card">
-                        <h3>Eventos Denegados</h3>
+                        <h3>Accesos Denegados</h3>
                         <p class="stat-number">{{ estadisticas.auth_stats.get(0, 0) }}</p>
                     </div>
                 </div>
@@ -87,8 +87,8 @@
                         <a href="{{ url_for('ver_eventos') }}" class="btn btn-secondary btn-sm">Ver Eventos</a>
                     </div>
                     <div class="feature-card">
-                        <h3>📅 Paso 3: Consultar Reportes</h3>
-                        <p>Genere reportes por fechas específicas para análisis y control.</p>
+                        <h3>📅 Paso 3: Consultar Por Fechas</h3>
+                        <p>Filtre los eventos por fechas específicas para visualización.</p>
                         <a href="{{ url_for('consultar_eventos') }}" class="btn btn-warning btn-sm">Consultar por Fecha</a>
                     </div>
                 </div>

@@ -308,6 +308,8 @@ def obtener_intentos_fallidos_recientes(identificacion, minutos=1):
 
         fecha = (datetime.now() - timedelta(minutes=1)).strftime("%Y-%m-%d %H:%M:%S")
 
+        self.logger.info(f"CONSULTANDO FECHA {fecha}")
+
         cursor.execute("""
             SELECT COUNT(*)
             FROM eventos

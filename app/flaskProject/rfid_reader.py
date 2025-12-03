@@ -1,5 +1,6 @@
 import RPi.GPIO as GPIO
 from mfrc522 import SimpleMFRC522
+from time import sleep
 import threading
 import time
 import traceback
@@ -61,8 +62,9 @@ class RFIDReader:
             led = self.led_verde if autorizado else self.led_rojo
 
             GPIO.output(led, GPIO.HIGH)
-            time.sleep(2)
+            time.sleep(5)
             GPIO.output(led, GPIO.LOW)
+
         except Exception as e:
             logger.error(f"Error controlando LEDs: {e}")
             logger.error(traceback.format_exc())
@@ -128,13 +130,10 @@ class RFIDReader:
 
                 now = datetime.now()
 
-                if (
-                    identificacion
-                    and (identificacion != self.ultimo_rfid_leido
-                         or (now - self.ultimo_rfid_leido_dt).total_seconds() > 5)
-                ):
+                if (identificacion and (identificacion != self.ultimo_rfid_leido or (now - self.ultimo_rfid_leido_dt).total_seconds() > 5)):
                     self.ultimo_rfid_leido = identificacion
                     self.ultimo_rfid_leido_dt = now
+                    self.controlar_leds(autorizado=True)
 
                     thread = threading.Thread(
                         target=self.procesar_rfid,
@@ -147,6 +146,7 @@ class RFIDReader:
                 else:
                     if DEBUG and identificacion:
                         logger.info("Lectura RFID ignorada por repetición o timeout")
+                        sleep(4)
 
             except KeyboardInterrupt:
                 logger.warning("🛑 Deteniendo lector RFID por teclado…")

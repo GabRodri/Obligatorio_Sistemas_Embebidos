@@ -78,4 +78,63 @@
                             <!-- Fecha -->
                             <td><span class="datetime">{{ alarma[2] }}</span></td>
 
-                            <!-- Estado (alarma activa?) -->
+                            <!-- Estado -->
+                            <td>
+                                <span class="badge {{ 'badge-danger' if alarma[3] else 'badge-success' }}">
+                                    {{ '🚨 Activada' if alarma[3] else '✔ Normal' }}
+                                </span>
+                            </td>
+
+                            <!-- Canal -->
+                            <td>
+                                <span class="badge badge-warning">🔔 Alarma</span>
+                            </td>
+
+                            <!-- Detalles -->
+                            <td>
+                                {% if alarma[5] %}
+                                    <span class="badge badge-info">{{ alarma[5] }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+
+                        </tr>
+                        {% endfor %}
+
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-footer">
+                <p>Mostrando <strong>{{ alarmas|length }}</strong> registros de alarma</p>
+            </div>
+
+            {% else %}
+            <div class="empty-state">
+                <h3>🔔 No hay alarmas registradas</h3>
+                <p>El sistema no ha registrado alarmas aún.</p>
+            </div>
+            {% endif %}
+        </section>
+
+    </div>
+
+    <script>
+        function recargarAlarmas() {
+            location.reload();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateElements = document.querySelectorAll('.datetime');
+            dateElements.forEach(el => {
+                const originalDate = el.textContent;
+                const date = new Date(originalDate);
+                el.textContent = date.toLocaleString('es-ES');
+                el.title = originalDate;
+            });
+        });
+    </script>
+
+</body>
+</html>

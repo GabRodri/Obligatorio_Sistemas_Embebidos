@@ -6,7 +6,7 @@ import time
 import traceback
 from datetime import datetime
 
-from database import obtener_funcionario_por_id, agregar_evento
+from database import obtener_funcionario_por_id, agregar_evento, obtener_intentos_fallidos_recientes
 from logger_config import setup_logger
 import logging
 
@@ -18,6 +18,11 @@ logger = setup_logger("rfid", "rfid_reader.log", level=logging.INFO)
 GPIO.setwarnings(False)
 DEBUG = True
 
+def activar_alarma(identificacion, intentos):
+    logger.warning(f"ALARMA DISPARADA para {identificacion}. Intentos={intentos}")
+    agregar_evento(identificacion, autorizado="No", operacion="Acceso", canal="Alarma")
+
+    # todo: Mostrar mensaje en globo en pagina WEB "ALARMA - INTENTO REITERADO DE ACCESO"
 
 class RFIDReader:
     def __init__(self):
@@ -93,6 +98,13 @@ class RFIDReader:
             logger.info(f"RFID leído: {identificacion}")
             autorizado = self.verificar_autorizacion(identificacion)
             success, mensaje = agregar_evento(identificacion, autorizado, "rfid", "rfid")
+
+            if success and autorizado == 0:
+                intentos = obtener_intentos_fallidos_recientes(identificacion, minutos=1)
+                logger.info(f"Intentos fallidos de {identificacion}: {intentos}")
+
+                if intentos >= 3:
+                    activar_alarma(identificacion, intentos)
 
             if success:
                 logger.info(f"Evento RFID registrado: {identificacion} - {'AUTORIZADO' if autorizado else 'DENEGADO'}")

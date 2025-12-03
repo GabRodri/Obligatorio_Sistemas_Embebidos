@@ -17,14 +17,6 @@ app = Flask(__name__)
 app.secret_key = "clave_secreta_para_mensajes_flash"
 
 sistema_activo = True
-
-
-def activar_alarma(identificacion, intentos):
-    logger.warning(f"ALARMA DISPARADA para {identificacion}. Intentos={intentos}")
-    agregar_evento(identificacion, autorizado="No", operacion="Acceso", canal="Alarma")
-
-    # todo: Mostrar mensaje en globo en pagina WEB "ALARMA - INTENTO REITERADO DE ACCESO"
-
 @app.route("/")
 def index():
     try:
@@ -270,13 +262,6 @@ def api_evento():
         autorizado = 1 if funcionario else 0
 
         success, mensaje = agregar_evento(identificacion, autorizado, "api", canal)
-
-        if success and autorizado == 0:
-            intentos = obtener_intentos_fallidos_recientes(identificacion, minutos=1)
-            logger.info(f"Intentos fallidos de {identificacion}: {intentos}")
-
-            if intentos >= 3:
-                activar_alarma(identificacion, intentos)
 
         if success:
             logger.info(f"Evento API OK: {identificacion}, autorizado={autorizado}")

@@ -4,7 +4,7 @@ from time import sleep
 import threading
 import time
 import traceback
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from database import obtener_funcionario_por_id, agregar_evento, obtener_intentos_fallidos_recientes
 from logger_config import setup_logger
@@ -100,6 +100,9 @@ class RFIDReader:
             success, mensaje = agregar_evento(identificacion, autorizado, "rfid", "rfid")
 
             if success and autorizado == 0:
+
+                fecha = (datetime.now() - timedelta(minutes=1)).strftime("%Y-%m-%d %H:%M:%S")
+                self.logger.info(f"CONSULTANDO FECHA {fecha}")
                 intentos = obtener_intentos_fallidos_recientes(identificacion, minutos=1)
                 logger.info(f"Intentos fallidos de {identificacion}: {intentos}")
 

@@ -324,3 +324,31 @@ def obtener_intentos_fallidos_recientes(identificacion, minutos=1):
 
     finally:
         conn.close()
+
+def obtener_alarmas(limite=200):
+    db = Database()
+    conn = db.get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute('''
+            SELECT e.*, f.nombre
+            FROM eventos e
+            LEFT JOIN funcionarios f ON e.identificacion = f.identificacion
+            WHERE e.canal = 'Alarma'
+            ORDER BY e.fecha_hora DESC
+            LIMIT ?
+        ''', (limite,))
+
+        alarmas = cursor.fetchall()
+        logger.info(f"Consulta histórico de alarmas: {len(alarmas)} encontradas")
+        return alarmas
+
+    except Exception as e:
+        logger.error(f"Error obteniendo histórico de alarmas: {e}")
+        logger.error(traceback.format_exc())
+        return []
+
+    finally:
+        conn.close()
+

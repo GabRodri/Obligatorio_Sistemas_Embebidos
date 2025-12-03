@@ -41,13 +41,7 @@ def index():
 @app.route('/historico_alarmas')
 def historico_alarmas():
 
-    conn = sqlite3.connect("Database.db")
-    c = conn.cursor()
-
-    c.execute("SELECT * FROM eventos WHERE canal = 'Alarma' ORDER BY fecha DESC")
-    alarmas = c.fetchall()
-
-    conn.close()
+    alarmas = obtener_alarmas()
 
     return render_template("historico_alarmas.html", alarmas=alarmas)
 

@@ -8,7 +8,7 @@ from pic_communicator import (
     dar_de_alta_funcionario_en_pic,
 )
 from time import sleep
-# from alarma import activar_alarma_led
+from alarma import activar_alarma_led
 from rfid_reader import iniciar_lector_rfid
 from logger_config import setup_logger
 
@@ -22,7 +22,7 @@ sistema_activo = True
 
 def activar_alarma(identificacion, intentos):
     logger.warning(f"ALARMA DISPARADA para {identificacion}. Intentos={intentos}")
-    # activar_alarma_led(duracion=5)
+    activar_alarma_led(duracion=5)
 @app.route("/")
 def index():
     try:

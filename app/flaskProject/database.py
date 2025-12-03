@@ -305,13 +305,15 @@ def obtener_intentos_fallidos_recientes(identificacion, minutos=1):
     cursor = conn.cursor()
 
     try:
-        cursor.execute('''
+
+        fecha = (datetime.now() - timedelta(minutes=1)).strftime("%Y-%m-%d %H:%M:%S")
+
+        cursor.execute("""
             SELECT COUNT(*)
             FROM eventos
-            WHERE identificacion = ?
-              AND (autorizado = 0 OR autorizado = 'No')
-              AND datetime(fecha_hora) >= datetime('now', ?)
-        ''', (identificacion, f'-{minutos} minutes'))
+            WHERE (autorizado = 0 OR autorizado = '0')
+              AND fecha_hora >= ?
+        """, (fecha,))
 
         cantidad = cursor.fetchone()[0]
         logger.info(f"Intentos fallidos recientes para {identificacion}: {cantidad}")

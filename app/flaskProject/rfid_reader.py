@@ -200,3 +200,8 @@ def iniciar_lector_rfid():
         logger.error(f"Error iniciando servicio RFID: {e}")
         logger.error(traceback.format_exc())
         return None
+
+if __name__ == "__main__":
+
+    lector = RFIDReader()
+    lector.run()

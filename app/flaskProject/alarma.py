@@ -1,4 +1,3 @@
-embebidosOrt.p45s
 import RPi.GPIO as GPIO
 import time
 import logging
@@ -9,8 +8,8 @@ logger = setup_logger("alarma", "alarma.log", level=logging.INFO)
 
 GPIO_ALARMA = 25
 
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
+# GPIO.setwarnings(False)
+# GPIO.setmode(GPIO.BCM)
 
 try:
     GPIO.setup(GPIO_ALARMA, GPIO.OUT, initial=GPIO.LOW)

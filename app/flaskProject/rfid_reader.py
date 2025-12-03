@@ -23,52 +23,46 @@ class RFIDReader:
     def __init__(self):
         try:
             self.reader = SimpleMFRC522()
-            self.led_verde = 11
-            self.led_rojo = 13
             self.running = True
             self.ultimo_rfid_leido = None
             self.ultimo_rfid_leido_dt = None
-
-            self.setup_gpio()
             logger.info("RFIDReader inicializado correctamente")
 
         except Exception as e:
             logger.error(f"Error inicializando RFIDReader: {e}")
             logger.error(traceback.format_exc())
             raise
-
-    def setup_gpio(self):
-        try:
-            GPIO.setup(self.led_verde, GPIO.OUT)
-            GPIO.setup(self.led_rojo, GPIO.OUT)
-            self.led_off()
-            logger.info("GPIO del lector RFID configurado correctamente")
-        except Exception as e:
-            logger.error(f"Error configurando GPIO en RFIDReader: {e}")
-            logger.error(traceback.format_exc())
-            raise
-
-    def led_off(self):
-        try:
-            GPIO.output(self.led_verde, GPIO.LOW)
-            GPIO.output(self.led_rojo, GPIO.LOW)
-        except Exception as e:
-            logger.error(f"Error apagando LEDs: {e}")
-            logger.error(traceback.format_exc())
-
-    def controlar_leds(self, autorizado):
-        try:
-            self.led_off()
-            led = self.led_verde if autorizado else self.led_rojo
-
-            GPIO.output(led, GPIO.HIGH)
-            time.sleep(5)
-            GPIO.output(led, GPIO.LOW)
-
-        except Exception as e:
-            logger.error(f"Error controlando LEDs: {e}")
-            logger.error(traceback.format_exc())
-
+    # def setup_gpio(self):
+    #     try:
+    #         GPIO.setup(self.led_verde, GPIO.OUT)
+    #         GPIO.setup(self.led_rojo, GPIO.OUT)
+    #         self.led_off()
+    #         logger.info("GPIO del lector RFID configurado correctamente")
+    #     except Exception as e:
+    #         logger.error(f"Error configurando GPIO en RFIDReader: {e}")
+    #         logger.error(traceback.format_exc())
+    #         raise
+    #
+    # def led_off(self):
+    #     try:
+    #         GPIO.output(self.led_verde, GPIO.LOW)
+    #         GPIO.output(self.led_rojo, GPIO.LOW)
+    #     except Exception as e:
+    #         logger.error(f"Error apagando LEDs: {e}")
+    #         logger.error(traceback.format_exc())
+    #
+    # def controlar_leds(self, autorizado):
+    #     try:
+    #         self.led_off()
+    #         led = self.led_verde if autorizado else self.led_rojo
+    #
+    #         GPIO.output(led, GPIO.HIGH)
+    #         time.sleep(5)
+    #         GPIO.output(led, GPIO.LOW)
+    #
+    #     except Exception as e:
+    #         logger.error(f"Error controlando LEDs: {e}")
+    #         logger.error(traceback.format_exc())
     def leer_rfid(self):
         try:
 
@@ -97,20 +91,14 @@ class RFIDReader:
     def  procesar_rfid(self, identificacion):
         try:
             logger.info(f"RFID leído: {identificacion}")
-
             autorizado = self.verificar_autorizacion(identificacion)
-            self.controlar_leds(autorizado)
-
             success, mensaje = agregar_evento(identificacion, autorizado, "rfid", "rfid")
 
             if success:
-                logger.info(
-                    f"Evento RFID registrado: {identificacion} - {'AUTORIZADO' if autorizado else 'DENEGADO'}"
-                )
+                logger.info(f"Evento RFID registrado: {identificacion} - {'AUTORIZADO' if autorizado else 'DENEGADO'}")
             else:
                 logger.error(f"Error registrando evento RFID: {mensaje}")
                 logger.error(traceback.format_exc())
-
             return autorizado
 
         except Exception as e:
@@ -133,7 +121,6 @@ class RFIDReader:
                 if (identificacion and (identificacion != self.ultimo_rfid_leido or (now - self.ultimo_rfid_leido_dt).total_seconds() > 5)):
                     self.ultimo_rfid_leido = identificacion
                     self.ultimo_rfid_leido_dt = now
-                    self.controlar_leds(autorizado=True)
 
                     thread = threading.Thread(
                         target=self.procesar_rfid,
@@ -162,7 +149,6 @@ class RFIDReader:
 
     def cleanup(self):
         try:
-            self.led_off()
             GPIO.cleanup()
             logger.info("GPIO del lector RFID limpiado correctamente")
         except Exception as e:

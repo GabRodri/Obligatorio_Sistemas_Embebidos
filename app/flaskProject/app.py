@@ -23,6 +23,8 @@ def activar_alarma(identificacion, intentos):
     logger.warning(f"ALARMA DISPARADA para {identificacion}. Intentos={intentos}")
     agregar_evento(identificacion, autorizado="No", operacion="Acceso", canal="Alarma")
 
+    # todo: Mostrar mensaje en globo en pagina WEB "ALARMA - INTENTO REITERADO DE ACCESO"
+
 @app.route("/")
 def index():
     try:
@@ -36,6 +38,9 @@ def index():
         logger.error(traceback.format_exc())
         raise
 
+@app.route('/historico_alarmas')
+def historico_alarmas():
+    pass
 
 @app.route("/control_sistema", methods=["POST"])
 def control_sistema():

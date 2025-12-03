@@ -309,7 +309,7 @@ def obtener_intentos_fallidos_recientes(identificacion, minutos=1):
             SELECT COUNT(*)
             FROM eventos
             WHERE identificacion = ?
-              AND autorizado = 0 
+              AND (autorizado = 0 OR autorizado = 'No')
               AND datetime(fecha_hora) >= datetime('now', ?)
         ''', (identificacion, f'-{minutos} minutes'))
 

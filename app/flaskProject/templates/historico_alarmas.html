@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Alarmas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+
+        <header>
+            <h1>Histórico de Alarmas</h1>
+            <a href="{{ url_for('index') }}" class="btn btn-back">← Volver al Inicio</a>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="stats-quick">
+            <div class="stats-mini">
+                <div class="stat-mini">
+                    <span class="stat-mini-label">Total Alarmas</span>
+                    <span class="stat-mini-value">{{ alarmas|length }}</span>
+                </div>
+
+                <div class="stat-mini">
+                    <span class="stat-mini-label">Alarmas Activas</span>
+                    <span class="stat-mini-value danger">
+                        {{ alarmas|selectattr("3")|list|length }}
+                    </span>
+                </div>
+
+                <div class="stat-mini">
+                    <span class="stat-mini-label">Alarmas Inactivas</span>
+                    <span class="stat-mini-value success">
+                        {{ alarmas|rejectattr("3")|list|length }}
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <section class="list-section">
+            <div class="section-header">
+                <h2>Registro de Alarmas</h2>
+                <div class="section-actions">
+                    <button onclick="recargarAlarmas()" class="btn btn-secondary">🔄 Actualizar</button>
+                </div>
+            </div>
+
+            {% if alarmas %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Fecha y Hora</th>
+                            <th>Estado</th>
+                            <th>Canal</th>
+                            <th>Detalles</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        {% for alarma in alarmas %}
+                        <tr class="{{ 'row-denied' if alarma[3] else 'row-authorized' }}">
+
+                            <!-- ID -->
+                            <td><code>#{{ alarma[0] }}</code></td>
+
+                            <!-- Fecha -->
+                            <td><span class="datetime">{{ alarma[2] }}</span></td>
+
+                            <!-- Estado (alarma activa?) -->

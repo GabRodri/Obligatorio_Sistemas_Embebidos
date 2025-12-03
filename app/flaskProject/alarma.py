@@ -1,4 +1,4 @@
-import RPi.GPIO as GPIO
+from gpiozero import LED
 import time
 import logging
 import traceback
@@ -8,36 +8,39 @@ logger = setup_logger("alarma", "alarma.log", level=logging.INFO)
 
 GPIO_ALARMA = 25
 
-# GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
+# Inicializamos el LED usando gpiozero
+try:
+    alarma_led = LED(GPIO_ALARMA)
+    logger.info("LED de alarma inicializado correctamente con gpiozero")
+except Exception as e:
+    logger.error(f"Error inicializando LED de alarma: {e}")
+    logger.error(traceback.format_exc())
 
-# try:
-#     GPIO.setup(GPIO_ALARMA, GPIO.OUT, initial=GPIO.LOW)
-#     logger.info("GPIO de alarma inicializado correctamente")
-# except Exception as e:
-#     logger.error(f"Error inicializando GPIO de alarma: {e}")
-#     logger.error(traceback.format_exc())
-#
-#
+
 def activar_alarma_led(duracion=5):
+    """
+    Enciende el LED de alarma durante 'duracion' segundos.
+    """
     logger.warning(f"ALARMA ACTIVADA — LED encendido por {duracion} segundos")
-    return
+
     try:
-        logger.warning(f"ALARMA ACTIVADA — LED encendido por {duracion} segundos")
-        GPIO.output(GPIO_ALARMA, GPIO.HIGH)
+        alarma_led.on()
         time.sleep(duracion)
     except Exception as e:
         logger.error(f"Error durante activación de alarma LED: {e}")
         logger.error(traceback.format_exc())
     finally:
-        GPIO.output(GPIO_ALARMA, GPIO.LOW)
+        alarma_led.off()
         logger.info("LED de alarma apagado")
-#
-#
-# def apagar_alarma_led():
-#     try:
-#         GPIO.output(GPIO_ALARMA, GPIO.LOW)
-#         logger.info("LED de alarma apagado manualmente")
-#     except Exception as e:
-#         logger.error(f"Error apagando alarma LED: {e}")
-#         logger.error(traceback.format_exc())
+
+
+def apagar_alarma_led():
+    """
+    Apaga manualmente el LED de alarma.
+    """
+    try:
+        alarma_led.off()
+        logger.info("LED de alarma apagado manualmente")
+    except Exception as e:
+        logger.error(f"Error apagando alarma LED: {e}")
+        logger.error(traceback.format_exc())

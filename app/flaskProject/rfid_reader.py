@@ -102,7 +102,7 @@ class RFIDReader:
             if success and autorizado == 0:
 
                 fecha = (datetime.now() - timedelta(minutes=1)).strftime("%Y-%m-%d %H:%M:%S")
-                self.logger.info(f"CONSULTANDO FECHA {fecha}")
+                logger.info(f"CONSULTANDO FECHA {fecha}")
                 intentos = obtener_intentos_fallidos_recientes(identificacion, minutos=1)
                 logger.info(f"Intentos fallidos de {identificacion}: {intentos}")
 

@@ -62,7 +62,7 @@ class PICCommunicator:
                 while True:
                     try:
                         if self.ser.in_waiting > 0:
-                            linea = self.ser.readline().decode("utf-8").strip()
+                            linea = self.ser.readline().decode("utf-8", errors="ignore").strip()
                             if linea:
                                 self.procesar_evento_pic(linea)
                     except Exception as inner:

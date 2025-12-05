@@ -94,7 +94,7 @@ def sincronizar_funcionarios_pic():
                 logger.info(f"Enviando {identificacion} al PIC")
                 dar_de_alta_funcionario_en_pic(identificacion)
                 total_enviados += 1
-                sleep(1)
+                sleep(2)
             else:
                 total_ignorados += 1
 

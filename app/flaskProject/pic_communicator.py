@@ -43,7 +43,7 @@ class PICCommunicator:
     def enviar_comando_pic(self, comando, cedula):
         try:
             if self.ser and self.ser.is_open:
-                mensaje = f"{comando}{cedula}"
+                mensaje = f"{comando}{cedula}\n"
                 self.ser.write(mensaje.encode("utf-8"))
                 logger.info(f"Comando enviado al PIC: {mensaje}")
                 return True
